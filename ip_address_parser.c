@@ -19,7 +19,8 @@ int secure_free_byte_array(uint8_t **array, uint32_t size) {
 
 
 int parse_ipv4_address(const char *ip_address, uint8_t **parsed_address) {
-  int16_t aux, i = 0;
+  int32_t aux;
+  int16_t i = 0;
 
   if (!ip_address || !parsed_address)
     return ERROR_INVALID_ARGUMENTS;
