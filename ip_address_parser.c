@@ -8,6 +8,9 @@
 #define ERROR_MEMORY 2
 #define ERROR_UNKNOWN 3
 
+#define IPV4_SIZE 4
+#define IPV6_SIZE 16
+
 
 int secure_free_byte_array(uint8_t **array, uint32_t size) {
   // secure free -> zero out structure
@@ -29,13 +32,13 @@ int parse_ipv4_address(const char *ip_address, uint8_t **parsed_address) {
   if (aux < 7 || aux > 15 || strspn(ip_address, "0123456789.") != aux)
     return ERROR_INVALID_ARGUMENTS;
 
-  *parsed_address = malloc(4 * sizeof(uint8_t));
+  *parsed_address = malloc(IPV4_SIZE * sizeof(uint8_t));
   if(!(*parsed_address))
     return ERROR_MEMORY;
 
   for (char *s = ip_address, *e = ip_address;; e++) {
-    if (i == 4) {
-      secure_free_byte_array(parsed_address, 4);
+    if (i == IPV4_SIZE) {
+      secure_free_byte_array(parsed_address, IPV4_SIZE);
       return ERROR_INVALID_ARGUMENTS;
     }
 
@@ -45,14 +48,14 @@ int parse_ipv4_address(const char *ip_address, uint8_t **parsed_address) {
       aux = strlen(s);
       if (aux == 0 || aux > 3) {
         *e = '.';
-        secure_free_byte_array(parsed_address, 4);
+        secure_free_byte_array(parsed_address, IPV4_SIZE);
         return ERROR_INVALID_ARGUMENTS;
       }
 
       aux = (int) strtoul(s, NULL, 10);
       if (aux < 0 || aux > 255) {
         *e = '.';
-        secure_free_byte_array(parsed_address, 4);
+        secure_free_byte_array(parsed_address, IPV4_SIZE);
         return ERROR_INVALID_ARGUMENTS;
       }
 
@@ -63,13 +66,13 @@ int parse_ipv4_address(const char *ip_address, uint8_t **parsed_address) {
     } else if (*e == '\0') {
       aux = strlen(s);
       if (aux == 0 || aux > 3) {
-        secure_free_byte_array(parsed_address, 4);
+        secure_free_byte_array(parsed_address, IPV4_SIZE);
         return ERROR_INVALID_ARGUMENTS;
       }
 
       aux = (int) strtoul(s, NULL, 10);
       if (aux < 0 || aux > 255) {
-        secure_free_byte_array(parsed_address, 4);
+        secure_free_byte_array(parsed_address, IPV4_SIZE);
         return ERROR_INVALID_ARGUMENTS;
       }
 
@@ -78,8 +81,8 @@ int parse_ipv4_address(const char *ip_address, uint8_t **parsed_address) {
     }
   }
 
-  if (i != 4) { // guarantees there were four numbers
-    secure_free_byte_array(parsed_address, 4);
+  if (i != IPV4_SIZE) { // guarantees there were IPV4_SIZE numbers
+    secure_free_byte_array(parsed_address, IPV4_SIZE);
     return ERROR_INVALID_ARGUMENTS;
   }
 
@@ -111,15 +114,15 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
     }
   }
 
-  *parsed_address = malloc(16 * sizeof(uint8_t));
+  *parsed_address = malloc(IPV6_SIZE * sizeof(uint8_t));
   if (!(*parsed_address)) {
     return ERROR_MEMORY;
   }
 
   for (char *s = ip_address, *e = ip_address;; e++) {
-    if (i > 11) {
-      if (i == 16) {
-        secure_free_byte_array(parsed_address, 16);
+    if (i >= IPV6_SIZE - IPV4_SIZE) {
+      if (i == IPV6_SIZE) {
+        secure_free_byte_array(parsed_address, IPV6_SIZE);
         return ERROR_INVALID_ARGUMENTS;
       } else if(ipv4) {
         ipv4_segment = s;
@@ -136,7 +139,7 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
 
         if (aux > 4) {
           *e = ':';
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
@@ -144,7 +147,7 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
         *e = ':';
 
         if (aux < 0 || aux > 65535) {
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
@@ -159,13 +162,13 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
           if (s == ip_address) {
             s = ++e + 1;
           } else { // third ':' in a row, invalid syntax
-            secure_free_byte_array(parsed_address, 16);
+            secure_free_byte_array(parsed_address, IPV6_SIZE);
             return ERROR_INVALID_ARGUMENTS;
           }
         }
 
         if (ellipsed) {
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
@@ -188,14 +191,14 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
 
       if (aux > 0) {
         if (aux > 4) {
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
         aux = (int) strtoul(s, NULL, 16);
 
         if (aux < 0 || aux > 65535) {
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
@@ -204,11 +207,11 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
 
       } else {
         if (ellipsed) {
-          secure_free_byte_array(parsed_address, 16);
+          secure_free_byte_array(parsed_address, IPV6_SIZE);
           return ERROR_INVALID_ARGUMENTS;
         }
 
-        for (; i < 16;)
+        for (; i < IPV6_SIZE;)
           (*parsed_address)[i++] = (uint8_t) 0;
       }
 
@@ -220,22 +223,22 @@ int parse_ipv6_address(char *ip_address, uint8_t **parsed_address) {
   if (ipv4) {
     uint8_t *ipv4_address = NULL;
     if ((aux = parse_ipv4_address(ipv4_segment, &ipv4_address)) != ERROR_OK) {
-      secure_free_byte_array(parsed_address, 16);
+      secure_free_byte_array(parsed_address, IPV6_SIZE);
       return aux;
     }
 
-    for(uint8_t j = 0; j < 4; j++)
+    for(uint8_t j = 0; j < IPV4_SIZE; j++)
       (*parsed_address)[i + j] = (uint8_t) ipv4_address[j];
 
-    secure_free_byte_array(&ipv4_address, 4);
+    secure_free_byte_array(&ipv4_address, IPV4_SIZE);
     i +=4;
   }
 
-  if (ellipsed && i != 16) {
-    for (uint8_t j = 15; j > 15 - (i - ellipsed); j--)
-      (*parsed_address)[j] = (*parsed_address)[i - (15 - j) - 1];
+  if (ellipsed && i != IPV6_SIZE) {
+    for (uint8_t j = IPV6_SIZE - 1; j > IPV6_SIZE - 1 - (i - ellipsed); j--)
+      (*parsed_address)[j] = (*parsed_address)[i - (IPV6_SIZE - j)];
  
-    for (uint8_t j = 0; j < 16 - i; j++)
+    for (uint8_t j = 0; j < IPV6_SIZE - i; j++)
       (*parsed_address)[ellipsed + j] = 0;
   }
 
@@ -249,7 +252,7 @@ int main(int argc, char *argv[]) {
     return ERROR_INVALID_ARGUMENTS;
   }
 
-  int error;
+  int16_t error;
   uint8_t *address = NULL;
 
   error = parse_ipv4_address(argv[1], &address);
@@ -260,10 +263,10 @@ int main(int argc, char *argv[]) {
 
   } else {
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < IPV4_SIZE; i++)
       printf("%d\n", address[i]);
 
-    secure_free_byte_array(&address, 4);
+    secure_free_byte_array(&address, IPV4_SIZE);
 
   }
 
@@ -275,10 +278,10 @@ int main(int argc, char *argv[]) {
 
   } else {
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < IPV6_SIZE; i++)
       printf("%d\n", address[i]);
 
-    secure_free_byte_array(&address, 16);
+    secure_free_byte_array(&address, IPV6_SIZE);
 
   }
 
